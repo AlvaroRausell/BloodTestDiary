@@ -6,36 +6,15 @@ import MonthDaySection from "./MonthDaySection";
 import ScrollBox from "./ScrollBox";
 import AppointmentSection from "./AppointmentSection";
 
-const APPOINTMENTS_EXAMPLE = [
-  {
-    status: "pending",
-    patientName: "Luka Kralj"
-  },
-  {
-    status: "completed",
-    patientName: "Alvaro Rausell"
-  },
-  {
-    status: "late",
-    patientName: "Danilo del Busso"
-  },
-  {
-    status: "completed",
-    patientName: "Alessandro Amantini"
-  },
-  {
-    status: "pending",
-    patientName: "IDK Who Else To Put"
-  }
-];
 const CalendarContainer = styled.div`
-  margin: 5%;
-  padding: 10%;
-  width: 300px;
-  height: 495px;
+  margin: 0.2%;
+  padding: 0%;
+  width: 250px;
+  height: 450px;
   background-color: white;
   padding: 0;
   position: relative;
+  border: solid 1px #646464;
 `;
 
 class CalendarDay extends React.Component {
@@ -58,7 +37,11 @@ class CalendarDay extends React.Component {
           <ScrollBox>
             <AppointmentSection
               type="Anytime Today"
-              appointments={APPOINTMENTS_EXAMPLE}
+              appointments={this.props.anytimeAppointments}
+            />
+            <AppointmentSection
+              type="Scheduled Appointments"
+              appointments={this.props.scheduledAppointments}
             />
           </ScrollBox>
         </CalendarContainer>
