@@ -7,6 +7,7 @@ const TableData = styled.td`
     padding: 7px;
     word-break: break-all;
     color: black;
+    background: white;
 `;
 
 const TableRow = styled.tr`
@@ -29,7 +30,6 @@ const Button = styled.button`
   font-weight: 200;
   background-color: #0b989d;
   word-break: break-word;
-  font-family: "Rajdhani",sans-serif;
   outline: none;
   :hover {
     background: #018589;

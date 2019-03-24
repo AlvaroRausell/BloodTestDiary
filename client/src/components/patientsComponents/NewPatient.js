@@ -6,15 +6,16 @@ import CarerSection from "./profileSections/CarerSection";
 import HospitalSection from "./profileSections/HospitalSection";
 import {getServerConnect} from "../../serverConnection";
 import { openAlert } from "../Alert"
+import {emptyCheck, emailCheck} from "../../lib/inputChecker";
+import OptionSwitch from "./../switch/OptionSwitch";
 
 
 const Container = styled.div`
   display: flex;
   width: 100%;
   flex-direction: column;
-  background: #f5f5f5;
+  background: white;
   align-items: center;
-  font-family: "Rajdhani",sans-serif;
   padding: 1%;
 `;
 
@@ -44,7 +45,7 @@ const CloseButton = styled.button`
 
   height: 44px;
   min-width: 100px;
-  margin: 4%;
+  margin: 3%;
 
   :hover {
     background: #c8c8c8;
@@ -60,7 +61,7 @@ const SaveButton = styled.button`
   color: white;
   text-align: center;
   text-decoration: none;
-  margin: 4%;
+  margin: 3%;
   border-radius: 10px;
 
   height: 44px;
@@ -73,6 +74,19 @@ const SaveButton = styled.button`
   outline: none;
 `;
 
+const SwitchContainer = styled.div`
+  margin-top: 2%;
+`;
+
+const Hr = styled.hr`
+  border: 0;
+  clear: both;
+  display: block;
+  width: 96%;               
+  background-color: #839595;
+  height: 1px;
+`;
+
 
 class NewPatient extends Component {
 
@@ -80,30 +94,59 @@ class NewPatient extends Component {
         super(props);
         this.state = {
             noCarer: true,
-            localHospital: true
+            localHospital: true,
+            isAdult: "yes"
         };
         this.serverConnect = getServerConnect();
 
     }
 
+    checkValues () {
+        if (emptyCheck(this.state.patientId)) {
+            return {correct: false, message: "Patient Id is compulsory"};
+        }
+        if (this.props.allPatientsId.indexOf(this.state.patientId) > -1) {
+            return {correct: false, message: "Patient with this Id already exists"}
+        }
+        if (emptyCheck(this.state.patientName) || emptyCheck(this.state.patientSurname)) {
+            return {correct: false, message: "Patient name and surname are compulsory"};
+        }
+        if (!emailCheck(this.state.patientEmail)) {
+            return {correct: false, message: "Wrong format of patient's email"};
+        }
+
+        if (!this.state.noCarer) {
+            if (emptyCheck(this.state.carerEmail)) {
+                return {correct: false, message: "Carer's email is compulsory"};
+            }
+            if (!emailCheck(this.state.carerEmail)) {
+                return {correct: false, message: "Wrong format of carer's email"};
+            }
+
+        }
+        if (!this.state.localHospital) {
+            if (emptyCheck(this.state.hospitalEmail)){
+                return {correct: false, message: "Hospital's email is compulsory"};
+            }
+            if (!emailCheck(this.state.hospitalEmail)) {
+                return {correct: false, message: "Wrong format of hospital's email"};
+            }
+
+        }
+        return {correct : true};
+    }
+
     onAddClick = () => {
-        let carerInfo = undefined;
-        let hospitalInfo = undefined;
-        if (this.state.patientId === "" || this.state.patientId === undefined) {
-            openAlert("Patient Id is compulsory", "confirmationAlert", "Ok");
+        const result = this.checkValues();
+        if (!result.correct) {
+            openAlert(result.message, "confirmationAlert", "Ok");
             return;
         }
 
-        if (this.state.patientName === "" || this.state.patientName === undefined || this.state.patientSurname === "" || this.state.patientSurname === undefined) {
-            openAlert("Patient name and surname are compulsory", "confirmationAlert", "Ok");
-            return;
-        }
-        if (!this.state.noCarer){
-            if (this.state.carerEmail === "" || this.state.carerEmail === undefined){
-                // TODO add UI alert
-                openAlert("Carer's email is compulsory", "confirmationAlert", "Ok");
-                return;
-            }
+        let carerInfo = undefined;
+        let hospitalInfo = undefined;
+
+        if (!this.state.noCarer) {
             carerInfo = {
                 carerId: this.state.carerId,
                 carerRelationship: this.state.carerRelationship,
@@ -112,16 +155,12 @@ class NewPatient extends Component {
                 carerEmail: this.state.carerEmail,
                 carerPhone: this.state.carerPhone
             }
-        }else{
+        } else {
             carerInfo = {
                 carerId: undefined
             }
         }
         if (!this.state.localHospital){
-            if (this.state.hospitalEmail === "" || this.state.hospitalEmail === undefined){
-                openAlert("Hospital's email is compulsory", "confirmationAlert", "Ok");
-                return;
-            }
             hospitalInfo = {
                 hospitalId: this.state.hospitalId,
                 hospitalName: this.state.hospitalName,
@@ -134,15 +173,14 @@ class NewPatient extends Component {
             }
         }
 
-        const {patientId, patientName, patientSurname, patientEmail, patientPhone} = this.state;
+        const {patientId, patientName, patientSurname, patientEmail, patientPhone, isAdult} = this.state;
         let newInfo = {
             patient_no: patientId, patient_name: patientName, patient_surname: patientSurname, patient_email: patientEmail, patient_phone: patientPhone,
             hospital_id: hospitalInfo.hospitalId, hospital_name: hospitalInfo.hospitalName, hospital_email: hospitalInfo.hospitalEmail, hospital_phone: hospitalInfo.hospitalPhone,
             carer_id: carerInfo.carerId, carer_name: carerInfo.carerName, carer_surname: carerInfo.carerSurname, carer_email: carerInfo.carerEmail, carer_phone: carerInfo.carerPhone,
-            relationship: carerInfo.carerRelationship
+            relationship: carerInfo.carerRelationship, isAdult: isAdult
         };
         console.log({newInfo});
-        //TODO : save patient
         this.serverConnect.addPatient(newInfo, res => {
             if (res.success) {
                 openAlert("Patient added successfully", "confirmationAlert", "Ok", () => {this.props.closeModal()});
@@ -152,12 +190,11 @@ class NewPatient extends Component {
         });
     };
 
-
-
     render() {
         return (
             <Container>
                 <PatientProfileTitle>{this.props.purpose}</PatientProfileTitle>
+                <Hr/>
                 <PatientSection
                     editable={true}
                     patientId={""}
@@ -175,6 +212,7 @@ class NewPatient extends Component {
                         })
                     }}
                 />
+                <Hr/>
                 <CarerSection
                     carerId={""} //TODO : generate this
                     carerRelationship={""}
@@ -194,6 +232,7 @@ class NewPatient extends Component {
                         })
                     }}
                 />
+                <Hr/>
                 <HospitalSection
                     hospitalId={""} //TODO : generate this
                     hospitalName={""}
@@ -209,6 +248,15 @@ class NewPatient extends Component {
                         })
                     }}
                 />
+                <Hr/>
+                <SwitchContainer>
+                    <OptionSwitch
+                        option1={"Under 12"}
+                        option2={"12 or older"}
+                        checked={true}
+                        onChange={() => this.setState(prevState => ({isAdult: prevState.isAdult === "yes" ? "no" : "yes"}))}
+                    />
+                </SwitchContainer>
 
                 <ButtonContainer>
                     <CloseButton onClick={this.props.closeModal}>Close</CloseButton>
